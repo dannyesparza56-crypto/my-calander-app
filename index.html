@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>2026 Pro Planner Studio</title>
+  <title>2026 Wave Design Planner</title>
   <link rel="manifest" href="manifest.json">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
@@ -19,19 +19,22 @@
     .photo-area { width: 100%; height: 250px; background: #ddd; border-radius: 8px; overflow: hidden; position: relative; margin-bottom: 15px; }
     .photo-area img { width: 100%; height: 100%; object-fit: cover; }
     
-    .month-name { text-align: center; font-size: 32px; font-weight: bold; margin-bottom: 5px; }
+    /* The Wave Header */
+    .header-container { display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 10px; }
+    .wave { flex-grow: 1; height: 20px; fill: currentColor; opacity: 0.3; }
+    .month-name { font-size: 32px; font-weight: bold; white-space: nowrap; }
     
-    .days-grid { display: grid; grid-template-columns: repeat(7, 1fr); border-top: 1px solid #eee; border-left: 1px solid #eee; }
-    .day-head { font-weight: bold; color: #888; padding: 8px 0; text-align: center; font-size: 10px; border-right: 1px solid #eee; border-bottom: 1px solid #eee; }
+    .days-grid { display: grid; grid-template-columns: repeat(7, 1fr); border-top: 2px solid currentColor; }
+    
+    /* Centered full day names */
+    .day-head { font-weight: bold; padding: 12px 0; text-align: center; font-size: 11px; border-bottom: 1px solid #eee; letter-spacing: 1px; }
     
     .day-square { height: 85px; position: relative; border-right: 1px solid #eee; border-bottom: 1px solid #eee; padding: 4px; display: flex; flex-direction: column; }
+    .day-square:nth-child(7n) { border-right: none; }
 
-    /* Number color is controlled via JavaScript style injection */
     .day-num { font-size: 10px; font-weight: bold; text-align: left; }
-    
     .day-notes { flex-grow: 1; border: none; background: transparent; resize: none; font-size: 10px; font-family: inherit; outline: none; width: 100%; color: inherit; }
-
-    .holiday-label { font-size: 7px; text-align: right; position: absolute; bottom: 2px; right: 4px; font-weight: bold; pointer-events: none; opacity: 0.8; }
+    .holiday-label { font-size: 7px; text-align: right; position: absolute; bottom: 2px; right: 4px; font-weight: bold; pointer-events: none; }
 
     .control-group { display: flex; flex-direction: column; gap: 2px; }
     button { padding: 8px 12px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold; }
@@ -41,7 +44,7 @@
 
   <div class="main-controls">
     <button style="background:var(--primary)" onclick="exportAll()">Download All Pages</button>
-    <button style="background:#444; color:white;" onclick="if(confirm('Reset all?')) { localStorage.clear(); location.reload(); }">Reset Design</button>
+    <button style="background:#444; color:white;" onclick="location.reload()">Refresh App</button>
   </div>
 
   <div id="calendar-container"></div>
@@ -54,13 +57,18 @@
       {name: "Classic Serif", val: "'Times New Roman', serif"},
       {name: "Elegant", val: "Georgia, serif"},
       {name: "Retro", val: "'Courier New', monospace"},
-      {name: "Bold Impact", val: "Impact, charcoal, sans-serif"},
-      {name: "Friendly", val: "Verdana, sans-serif"},
-      {name: "Playful", val: "'Comic Sans MS', cursive"}
+      {name: "Bold Impact", val: "Impact, charcoal, sans-serif"}
     ];
 
     const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    const dayNames = ["SUN.", "MON.", "TUE.", "WED.", "THUR.", "FRI.", "SAT."];
     
+    // An SVG Wave string to reuse
+    const waveSvg = `
+      <svg class="wave" viewBox="0 0 100 20" preserveAspectRatio="none">
+        <path d="M0 10 Q 12.5 0 25 10 T 50 10 T 75 10 T 100 10" stroke="currentColor" fill="transparent" stroke-width="2"/>
+      </svg>`;
+
     function createPlanner() {
       const container = document.getElementById('calendar-container');
       const savedNotes = JSON.parse(localStorage.getItem('calNotes') || '{}');
@@ -71,23 +79,21 @@
         const page = document.createElement('div');
         page.className = 'month-page';
         page.id = `page-${mIdx}`;
-        
-        // Initial Styles
         page.style.fontFamily = design.font || fontFamilies[0].val;
         page.style.color = design.mainColor || '#000000';
 
         const firstDay = new Date(2026, mIdx, 1).getDay();
         const daysInMonth = new Date(2026, mIdx + 1, 0).getDate();
         
-        let gridHtml = ['S','M','T','W','T','F','S'].map(d => `<div class="day-head">${d}</div>`).join('');
-        for(let x=0; x<firstDay; x++) gridHtml += `<div class="day-square"></div>`;
+        let gridHtml = dayNames.map(d => `<div class="day-head">${d}</div>`).join('');
+        for(let x=0; x<firstDay; x++) gridHtml += `<div class="day-square" style="border-left:1px solid #eee"></div>`;
         
         for(let d=1; d<=daysInMonth; d++) {
           const holiday = holidayData[`${mIdx}-${d}`] || "";
           const note = (savedNotes[mIdx] && savedNotes[mIdx][d]) ? savedNotes[mIdx][d] : "";
           
           gridHtml += `
-            <div class="day-square">
+            <div class="day-square" style="${(d+firstDay-1)%7===0 ? 'border-left:1px solid #eee' : ''}">
               <span class="day-num num-style-${mIdx}" style="color:${design.numColor || '#999999'}">${d}</span>
               <textarea class="day-notes" oninput="saveNote(${mIdx}, ${d}, this.value)">${note}</textarea>
               ${holiday ? `<span class="holiday-label num-style-${mIdx}" style="color:${design.numColor || '#ff4444'}">${holiday}</span>` : ''}
@@ -102,11 +108,17 @@
               </select>
             </div>
             <div class="control-group">Main Color: <input type="color" value="${design.mainColor || '#000000'}" onchange="updateDesign(${mIdx}, 'mainColor', this.value)"></div>
-            <div class="control-group">Number Color: <input type="color" value="${design.numColor || '#999999'}" onchange="updateDesign(${mIdx}, 'numColor', this.value)"></div>
+            <div class="control-group">Num Color: <input type="color" value="${design.numColor || '#999999'}" onchange="updateDesign(${mIdx}, 'numColor', this.value)"></div>
             <div class="control-group">Photo: <input type="file" onchange="uploadPhoto(event, ${mIdx})"></div>
           </div>
           <div class="photo-area"><img id="img-${mIdx}" src="${design.img || 'https://via.placeholder.com/600x250?text='+name}"></div>
-          <div class="month-name">${name}</div>
+          
+          <div class="header-container">
+            ${waveSvg}
+            <div class="month-name">${name}</div>
+            ${waveSvg}
+          </div>
+          
           <div class="days-grid">${gridHtml}</div>
         `;
         container.appendChild(page);
@@ -118,13 +130,10 @@
       if(!data[idx]) data[idx] = {};
       data[idx][key] = val;
       localStorage.setItem('calData', JSON.stringify(data));
-      
       const page = document.getElementById(`page-${idx}`);
       if(key === 'font') page.style.fontFamily = val;
       if(key === 'mainColor') page.style.color = val;
-      if(key === 'numColor') {
-        document.querySelectorAll(`.num-style-${idx}`).forEach(el => el.style.color = val);
-      }
+      if(key === 'numColor') document.querySelectorAll(`.num-style-${idx}`).forEach(el => el.style.color = val);
     }
 
     function saveNote(mIdx, dIdx, text) {
@@ -134,13 +143,13 @@
       localStorage.setItem('calNotes', JSON.stringify(notes));
     }
 
-    function uploadPhoto(e, idx) {
+    function uploadPhoto(event, idx) {
       const reader = new FileReader();
       reader.onload = () => {
         document.getElementById(`img-${idx}`).src = reader.result;
         updateDesign(idx, 'img', reader.result);
       };
-      reader.readAsDataURL(e.target.files[0]);
+      reader.readAsDataURL(event.target.files[0]);
     }
 
     async function exportAll() {
@@ -149,7 +158,7 @@
       for (let i = 0; i < 12; i++) {
         const canvas = await html2canvas(document.getElementById(`page-${i}`));
         const link = document.createElement('a');
-        link.download = `2026-${months[i]}.png`;
+        link.download = `2026-Calendar-${months[i]}.png`;
         link.href = canvas.toDataURL();
         link.click();
         await new Promise(r => setTimeout(r, 700));
