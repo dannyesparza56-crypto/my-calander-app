@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Simple Calendar</title>
+  <link rel="manifest" href="manifest.json">
+  <style>
+    :root { --bg: #f4f7f6; --white: #ffffff; --primary: #00ff88; --text: #333; }
+    body { font-family: sans-serif; background: var(--bg); display: flex; justify-content: center; padding: 20px; }
+    .calendar { background: var(--white); width: 100%; max-width: 400px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); overflow: hidden; }
+    .header { background: #121212; color: var(--primary); padding: 20px; text-align: center; font-size: 20px; font-weight: bold; }
+    .days-grid { display: grid; grid-template-columns: repeat(7, 1fr); padding: 10px; text-align: center; }
+    .day-name { font-weight: bold; color: #888; padding-bottom: 10px; font-size: 12px; }
+    .day { padding: 15px 0; border-radius: 8px; transition: 0.2s; cursor: pointer; font-size: 14px; }
+    .day:hover { background: #eee; }
+    .today { background: var(--primary) !important; color: #121212; font-weight: bold; }
+  </style>
+</head>
+<body>
+
+<div class="calendar">
+  <div class="header" id="monthYear">Month Year</div>
+  <div class="days-grid" id="calendarGrid">
+    <div class="day-name">SUN</div><div class="day-name">MON</div><div class="day-name">TUE</div>
+    <div class="day-name">WED</div><div class="day-name">THU</div><div class="day-name">FRI</div><div class="day-name">SAT</div>
+    </div>
+</div>
+
+<script>
+  function generateCalendar() {
+    const grid = document.getElementById('calendarGrid');
+    const header = document.getElementById('monthYear');
+    const now = new Date();
+    const month = now.getMonth();
+    const year = now.getFullYear();
+
+    header.innerText = now.toLocaleString('default', { month: 'long' }) + " " + year;
+
+    // Get first day of month and total days
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    // Add empty spaces for days before the 1st
+    for (let i = 0; i < firstDay; i++) {
+      const emptyDiv = document.createElement('div');
+      grid.appendChild(emptyDiv);
+    }
+
+    // Add the actual days
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dayDiv = document.createElement('div');
+      dayDiv.classList.add('day');
+      dayDiv.innerText = day;
+      if (day === now.getDate()) dayDiv.classList.add('today');
+      grid.appendChild(dayDiv);
+    }
+  }
+
+  generateCalendar();
+
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js');
+  }
+</script>
+</body>
+</html>
