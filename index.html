@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>2026 Wave Design Planner</title>
+  <title>2026 Clean Design Planner</title>
   <link rel="manifest" href="manifest.json">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
@@ -19,14 +19,11 @@
     .photo-area { width: 100%; height: 250px; background: #ddd; border-radius: 8px; overflow: hidden; position: relative; margin-bottom: 15px; }
     .photo-area img { width: 100%; height: 100%; object-fit: cover; }
     
-    /* The Wave Header */
-    .header-container { display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 10px; }
-    .wave { flex-grow: 1; height: 20px; fill: currentColor; opacity: 0.3; }
-    .month-name { font-size: 32px; font-weight: bold; white-space: nowrap; }
+    .month-header { text-align: center; margin-bottom: 15px; }
+    .month-name { font-size: 36px; font-weight: bold; letter-spacing: -1px; }
     
     .days-grid { display: grid; grid-template-columns: repeat(7, 1fr); border-top: 2px solid currentColor; }
     
-    /* Centered full day names */
     .day-head { font-weight: bold; padding: 12px 0; text-align: center; font-size: 11px; border-bottom: 1px solid #eee; letter-spacing: 1px; }
     
     .day-square { height: 85px; position: relative; border-right: 1px solid #eee; border-bottom: 1px solid #eee; padding: 4px; display: flex; flex-direction: column; }
@@ -62,12 +59,6 @@
 
     const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
     const dayNames = ["SUN.", "MON.", "TUE.", "WED.", "THUR.", "FRI.", "SAT."];
-    
-    // An SVG Wave string to reuse
-    const waveSvg = `
-      <svg class="wave" viewBox="0 0 100 20" preserveAspectRatio="none">
-        <path d="M0 10 Q 12.5 0 25 10 T 50 10 T 75 10 T 100 10" stroke="currentColor" fill="transparent" stroke-width="2"/>
-      </svg>`;
 
     function createPlanner() {
       const container = document.getElementById('calendar-container');
@@ -113,10 +104,8 @@
           </div>
           <div class="photo-area"><img id="img-${mIdx}" src="${design.img || 'https://via.placeholder.com/600x250?text='+name}"></div>
           
-          <div class="header-container">
-            ${waveSvg}
+          <div class="month-header">
             <div class="month-name">${name}</div>
-            ${waveSvg}
           </div>
           
           <div class="days-grid">${gridHtml}</div>
