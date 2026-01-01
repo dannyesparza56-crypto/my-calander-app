@@ -3,87 +3,103 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>12-Page Photo Calendar</title>
+  <title>2026 Design Studio Calendar</title>
   <link rel="manifest" href="manifest.json">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
-    :root { --primary: #00ff88; --bg: #1a1a1a; --text: #ffffff; }
-    body { font-family: sans-serif; background: var(--bg); color: var(--text); padding: 20px; display: flex; flex-direction: column; align-items: center; }
+    :root { --primary: #00ff88; --bg: #121212; --panel: #1e1e1e; }
+    body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; padding: 20px; display: flex; flex-direction: column; align-items: center; }
     
-    .controls { background: #2d2d2d; padding: 15px; border-radius: 10px; margin-bottom: 20px; display: flex; gap: 10px; position: sticky; top: 10px; z-index: 100; }
+    .main-controls { background: var(--panel); padding: 15px; border-radius: 12px; margin-bottom: 30px; position: sticky; top: 10px; z-index: 1000; display: flex; gap: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
     
-    /* Calendar Container */
-    #calendar-container { display: flex; flex-direction: column; gap: 40px; width: 100%; max-width: 500px; }
+    .month-page { background: white; color: black; padding: 30px; border-radius: 15px; margin-bottom: 50px; width: 100%; max-width: 500px; position: relative; transition: 0.3s; }
     
-    .month-page { background: white; color: black; padding: 20px; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+    /* Individual Design Panel */
+    .design-panel { background: #f0f0f0; padding: 10px; border-radius: 8px; margin-bottom: 15px; display: flex; gap: 10px; font-size: 12px; align-items: center; }
     
-    .photo-area { width: 100%; height: 250px; background: #eee; border-radius: 8px; overflow: hidden; position: relative; display: flex; justify-content: center; align-items: center; margin-bottom: 15px; }
+    .photo-area { width: 100%; height: 280px; background: #ddd; border-radius: 10px; overflow: hidden; position: relative; margin-bottom: 20px; border: 2px dashed #ccc; }
     .photo-area img { width: 100%; height: 100%; object-fit: cover; }
     
-    /* Custom upload button inside each month */
-    .upload-label { position: absolute; background: rgba(0,0,0,0.6); color: white; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-size: 12px; }
-    .upload-label:hover { background: var(--primary); color: black; }
-    input[type="file"] { display: none; }
-
-    .month-name { text-align: center; font-size: 24px; font-weight: bold; margin-bottom: 15px; }
+    .month-name { text-align: center; font-size: 32px; font-weight: bold; margin-bottom: 10px; }
     .days-grid { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; }
-    .day-head { font-weight: bold; color: #888; margin-bottom: 10px; }
-    .day-num { padding: 10px 0; border-top: 1px solid #eee; }
+    .day-head { font-weight: bold; color: #666; padding: 10px 0; border-bottom: 2px solid #eee; }
+    .day-num { padding: 15px 0; position: relative; border-bottom: 1px solid #f9f9f9; }
+    
+    /* Holiday Style */
+    .holiday-tag { font-size: 8px; color: #d90429; display: block; position: absolute; width: 100%; bottom: 2px; font-weight: bold; }
+    .is-holiday { color: #d90429; font-weight: bold; }
+
+    button { padding: 10px 15px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold; }
+    .dl-btn { background: var(--primary); color: #000; }
   </style>
 </head>
 <body>
 
-  <div class="controls">
-    <select id="fontSelect" onchange="changeFont(this.value)">
-      <option value="Arial">Modern (Arial)</option>
-      <option value="Georgia">Elegant (Georgia)</option>
-      <option value="'Courier New'">Retro (Courier)</option>
-    </select>
-    <button style="background:var(--primary); font-weight:bold;" onclick="exportAllMonths()">Download All (12 Images)</button>
+  <div class="main-controls">
+    <button class="dl-btn" onclick="exportAll()">Download All 12 Pages</button>
+    <button style="background:#ff4444; color:white;" onclick="clearAllData()">Reset All Designs</button>
   </div>
 
-  <div id="calendar-container">
-    </div>
+  <div id="calendar-container"></div>
 
   <script>
+    const holidayData = {
+      "0-1": "New Year's Day", "0-19": "MLK Day",
+      "1-14": "Valentine's", "1-16": "Presidents Day",
+      "2-17": "St. Patrick's", "4-10": "Mother's Day",
+      "4-25": "Memorial Day", "5-19": "Juneteenth",
+      "6-4": "Independence Day", "8-7": "Labor Day",
+      "9-12": "Indigenous Peoples' Day", "10-11": "Veterans Day",
+      "10-26": "Thanksgiving", "11-25": "Christmas"
+    };
+
+    const fonts = ["Arial", "Georgia", "Courier New", "Verdana", "Impact", "Trebuchet MS", "Times New Roman"];
     const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-    const container = document.getElementById('calendar-container');
-
-    function changeFont(font) {
-      container.style.fontFamily = font;
-    }
-
-    // Function to handle individual image uploads
-    function handleUpload(event, imgId) {
-      const reader = new FileReader();
-      reader.onload = function() {
-        document.getElementById(imgId).src = reader.result;
-      }
-      reader.readAsDataURL(event.target.files[0]);
+    
+    function saveDesign(monthIdx, key, value) {
+      let data = JSON.parse(localStorage.getItem('calData') || '{}');
+      if (!data[monthIdx]) data[monthIdx] = {};
+      data[monthIdx][key] = value;
+      localStorage.setItem('calData', JSON.stringify(data));
     }
 
     function createCalendar() {
-      const year = 2026;
-      months.forEach((name, index) => {
+      const container = document.getElementById('calendar-container');
+      const savedData = JSON.parse(localStorage.getItem('calData') || '{}');
+
+      months.forEach((name, i) => {
+        const settings = savedData[i] || {};
         const page = document.createElement('div');
         page.className = 'month-page';
-        page.id = `month-${index}`;
-        
-        const firstDay = new Date(year, index, 1).getDay();
-        const daysInMonth = new Date(year, index + 1, 0).getDate();
+        page.id = `page-${i}`;
+        page.style.fontFamily = settings.font || 'Arial';
+        page.style.color = settings.color || '#000000';
+
+        const firstDay = new Date(2026, i, 1).getDay();
+        const daysInMonth = new Date(2026, i + 1, 0).getDate();
         
         let daysHtml = '';
         ['S','M','T','W','T','F','S'].forEach(d => daysHtml += `<div class="day-head">${d}</div>`);
-        for(let i=0; i<firstDay; i++) daysHtml += `<div></div>`;
-        for(let d=1; d<=daysInMonth; d++) daysHtml += `<div class="day-num">${d}</div>`;
+        for(let x=0; x<firstDay; x++) daysHtml += `<div></div>`;
+        for(let d=1; d<=daysInMonth; d++) {
+          const holiday = holidayData[`${i}-${d}`] || "";
+          daysHtml += `
+            <div class="day-num ${holiday ? 'is-holiday' : ''}">
+              ${d}
+              ${holiday ? `<span class="holiday-tag">${holiday}</span>` : ''}
+            </div>`;
+        }
 
         page.innerHTML = `
+          <div class="design-panel">
+            <input type="color" value="${settings.color || '#000000'}" onchange="updateMonthStyle(${i}, 'color', this.value)">
+            <select onchange="updateMonthStyle(${i}, 'font', this.value)">
+              ${fonts.map(f => `<option value="${f}" ${settings.font === f ? 'selected' : ''}>${f}</option>`).join('')}
+            </select>
+            <input type="file" style="width:150px" onchange="uploadPhoto(event, ${i})">
+          </div>
           <div class="photo-area">
-            <img id="img-${index}" src="https://via.placeholder.com/500x300?text=Click+to+Upload+${name}+Photo">
-            <label class="upload-label">
-              Change Photo
-              <input type="file" onchange="handleUpload(event, 'img-${index}')">
-            </label>
+            <img id="img-${i}" src="${settings.img || 'https://via.placeholder.com/500x300?text=Upload+Photo'}">
           </div>
           <div class="month-name">${name}</div>
           <div class="days-grid">${daysHtml}</div>
@@ -92,24 +108,37 @@
       });
     }
 
-    async function exportAllMonths() {
-      // Hide the upload labels briefly so they don't show in the photo
-      const labels = document.querySelectorAll('.upload-label');
-      labels.forEach(l => l.style.display = 'none');
+    function updateMonthStyle(idx, type, val) {
+      const el = document.getElementById(`page-${idx}`);
+      if (type === 'color') el.style.color = val;
+      if (type === 'font') el.style.fontFamily = val;
+      saveDesign(idx, type, val);
+    }
 
+    function uploadPhoto(e, idx) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        document.getElementById(`img-${idx}`).src = reader.result;
+        saveDesign(idx, 'img', reader.result);
+      };
+      reader.readAsDataURL(e.target.files[0]);
+    }
+
+    async function exportAll() {
+      const panels = document.querySelectorAll('.design-panel');
+      panels.forEach(p => p.style.display = 'none');
       for (let i = 0; i < 12; i++) {
-        const element = document.getElementById(`month-${i}`);
-        const canvas = await html2canvas(element);
+        const canvas = await html2canvas(document.getElementById(`page-${i}`));
         const link = document.createElement('a');
-        link.download = `Calendar-2026-${months[i]}.png`;
+        link.download = `2026-${months[i]}.png`;
         link.href = canvas.toDataURL();
         link.click();
-        // Short delay to prevent browser from blocking 12 popups
-        await new Promise(r => setTimeout(r, 500));
+        await new Promise(r => setTimeout(r, 600));
       }
-
-      labels.forEach(l => l.style.display = 'block');
+      panels.forEach(p => p.style.display = 'flex');
     }
+
+    function clearAllData() { if(confirm("Clear all your designs?")) { localStorage.clear(); location.reload(); } }
 
     createCalendar();
   </script>
