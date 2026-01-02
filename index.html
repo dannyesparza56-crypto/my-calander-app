@@ -3,60 +3,64 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>2026 Clean Design Planner</title>
+  <title>2026 Letter Size PDF Planner</title>
   <link rel="manifest" href="manifest.json">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
     :root { --primary: #00ff88; --bg: #121212; --panel: #1e1e1e; }
     body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; padding: 20px; display: flex; flex-direction: column; align-items: center; }
     
     .main-controls { background: var(--panel); padding: 15px; border-radius: 12px; margin-bottom: 30px; position: sticky; top: 10px; z-index: 1000; display: flex; gap: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
     
-    .month-page { background: white; color: black; padding: 20px; border-radius: 10px; margin-bottom: 50px; width: 100%; max-width: 600px; position: relative; }
+    /* Letter Size Proportions (8.5 x 11 ratio) */
+    .month-page { 
+      background: white; 
+      color: black; 
+      padding: 40px; 
+      margin-bottom: 50px; 
+      width: 850px; /* Scaled for Letter Size */
+      height: 1100px; 
+      position: relative; 
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+    }
     
     .design-panel { background: #f0f0f0; padding: 12px; border-radius: 8px; margin-bottom: 15px; display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; font-size: 11px; color: #333; align-items: center; }
     
-    .photo-area { width: 100%; height: 250px; background: #ddd; border-radius: 8px; overflow: hidden; position: relative; margin-bottom: 15px; }
+    .photo-area { width: 100%; height: 400px; background: #ddd; border-radius: 8px; overflow: hidden; position: relative; margin-bottom: 30px; }
     .photo-area img { width: 100%; height: 100%; object-fit: cover; }
     
-    .month-header { text-align: center; margin-bottom: 15px; }
-    .month-name { font-size: 36px; font-weight: bold; letter-spacing: -1px; }
+    .month-header { text-align: center; margin-bottom: 20px; }
+    .month-name { font-size: 48px; font-weight: bold; }
     
-    .days-grid { display: grid; grid-template-columns: repeat(7, 1fr); border-top: 2px solid currentColor; }
+    .days-grid { display: grid; grid-template-columns: repeat(7, 1fr); border-top: 3px solid currentColor; flex-grow: 1; }
     
-    .day-head { font-weight: bold; padding: 12px 0; text-align: center; font-size: 11px; border-bottom: 1px solid #eee; letter-spacing: 1px; }
+    .day-head { font-weight: bold; padding: 15px 0; text-align: center; font-size: 14px; border-bottom: 1px solid #eee; }
     
-    .day-square { height: 85px; position: relative; border-right: 1px solid #eee; border-bottom: 1px solid #eee; padding: 4px; display: flex; flex-direction: column; }
+    .day-square { position: relative; border-right: 1px solid #eee; border-bottom: 1px solid #eee; padding: 8px; display: flex; flex-direction: column; min-height: 100px; }
     .day-square:nth-child(7n) { border-right: none; }
 
-    .day-num { font-size: 10px; font-weight: bold; text-align: left; }
-    .day-notes { flex-grow: 1; border: none; background: transparent; resize: none; font-size: 10px; font-family: inherit; outline: none; width: 100%; color: inherit; }
-    .holiday-label { font-size: 7px; text-align: right; position: absolute; bottom: 2px; right: 4px; font-weight: bold; pointer-events: none; }
+    .day-num { font-size: 12px; font-weight: bold; text-align: left; }
+    .day-notes { flex-grow: 1; border: none; background: transparent; resize: none; font-size: 12px; font-family: inherit; outline: none; width: 100%; color: inherit; }
+    .holiday-label { font-size: 9px; text-align: right; position: absolute; bottom: 5px; right: 8px; font-weight: bold; }
 
-    .control-group { display: flex; flex-direction: column; gap: 2px; }
-    button { padding: 8px 12px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold; }
+    button { padding: 10px 20px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold; }
   </style>
 </head>
 <body>
 
   <div class="main-controls">
-    <button style="background:var(--primary)" onclick="exportAll()">Download All Pages</button>
+    <button style="background:var(--primary)" onclick="exportPDF()">Download 12-Page PDF</button>
     <button style="background:#444; color:white;" onclick="location.reload()">Refresh App</button>
   </div>
 
   <div id="calendar-container"></div>
 
   <script>
+    const { jsPDF } = window.jspdf;
     const holidayData = { "0-1": "New Year's", "0-19": "MLK Day", "1-14": "Valentine's", "2-17": "St. Paddy's", "4-10": "Mother's Day", "4-25": "Memorial Day", "6-4": "July 4th", "8-7": "Labor Day", "10-26": "Thanksgiving", "11-25": "Christmas" };
-    
-    const fontFamilies = [
-      {name: "Modern Sans", val: "'Segoe UI', sans-serif"},
-      {name: "Classic Serif", val: "'Times New Roman', serif"},
-      {name: "Elegant", val: "Georgia, serif"},
-      {name: "Retro", val: "'Courier New', monospace"},
-      {name: "Bold Impact", val: "Impact, charcoal, sans-serif"}
-    ];
-
     const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
     const dayNames = ["SUN.", "MON.", "TUE.", "WED.", "THUR.", "FRI.", "SAT."];
 
@@ -70,7 +74,7 @@
         const page = document.createElement('div');
         page.className = 'month-page';
         page.id = `page-${mIdx}`;
-        page.style.fontFamily = design.font || fontFamilies[0].val;
+        page.style.fontFamily = design.font || 'Segoe UI';
         page.style.color = design.mainColor || '#000000';
 
         const firstDay = new Date(2026, mIdx, 1).getDay();
@@ -82,7 +86,6 @@
         for(let d=1; d<=daysInMonth; d++) {
           const holiday = holidayData[`${mIdx}-${d}`] || "";
           const note = (savedNotes[mIdx] && savedNotes[mIdx][d]) ? savedNotes[mIdx][d] : "";
-          
           gridHtml += `
             <div class="day-square" style="${(d+firstDay-1)%7===0 ? 'border-left:1px solid #eee' : ''}">
               <span class="day-num num-style-${mIdx}" style="color:${design.numColor || '#999999'}">${d}</span>
@@ -93,45 +96,55 @@
 
         page.innerHTML = `
           <div class="design-panel">
-            <div class="control-group">Font: 
-              <select onchange="updateDesign(${mIdx}, 'font', this.value)">
-                ${fontFamilies.map(f => `<option value="${f.val}" ${design.font === f.val ? 'selected' : ''}>${f.name}</option>`).join('')}
-              </select>
-            </div>
-            <div class="control-group">Main Color: <input type="color" value="${design.mainColor || '#000000'}" onchange="updateDesign(${mIdx}, 'mainColor', this.value)"></div>
-            <div class="control-group">Num Color: <input type="color" value="${design.numColor || '#999999'}" onchange="updateDesign(${mIdx}, 'numColor', this.value)"></div>
-            <div class="control-group">Photo: <input type="file" onchange="uploadPhoto(event, ${mIdx})"></div>
+            Main Color: <input type="color" value="${design.mainColor || '#000000'}" onchange="updateDesign(${mIdx}, 'mainColor', this.value)">
+            Num Color: <input type="color" value="${design.numColor || '#999999'}" onchange="updateDesign(${mIdx}, 'numColor', this.value)">
+            Photo: <input type="file" onchange="uploadPhoto(event, ${mIdx})">
           </div>
-          <div class="photo-area"><img id="img-${mIdx}" src="${design.img || 'https://via.placeholder.com/600x250?text='+name}"></div>
-          
-          <div class="month-header">
-            <div class="month-name">${name}</div>
-          </div>
-          
+          <div class="photo-area"><img id="img-${mIdx}" src="${design.img || 'https://via.placeholder.com/800x400?text='+name}"></div>
+          <div class="month-header"><div class="month-name">${name}</div></div>
           <div class="days-grid">${gridHtml}</div>
         `;
         container.appendChild(page);
       });
     }
 
+    async function exportPDF() {
+      const panels = document.querySelectorAll('.design-panel');
+      panels.forEach(p => p.style.display = 'none');
+      
+      const doc = new jsPDF('p', 'pt', 'letter'); // 'p'ortrait, 'pt' points, 'letter' size
+
+      for (let i = 0; i < 12; i++) {
+        const element = document.getElementById(`page-${i}`);
+        const canvas = await html2canvas(element, { scale: 2 });
+        const imgData = canvas.toDataURL('image/png');
+        
+        if (i > 0) doc.addPage();
+        
+        // Add image to fill the letter size page
+        doc.addImage(imgData, 'PNG', 0, 0, 612, 792); // Letter size is 612x792 points
+      }
+
+      doc.save("2026-Calendar-Planner.pdf");
+      panels.forEach(p => p.style.display = 'grid');
+    }
+
+    // Reuse previous helper functions
     function updateDesign(idx, key, val) {
       let data = JSON.parse(localStorage.getItem('calData') || '{}');
       if(!data[idx]) data[idx] = {};
       data[idx][key] = val;
       localStorage.setItem('calData', JSON.stringify(data));
       const page = document.getElementById(`page-${idx}`);
-      if(key === 'font') page.style.fontFamily = val;
       if(key === 'mainColor') page.style.color = val;
       if(key === 'numColor') document.querySelectorAll(`.num-style-${idx}`).forEach(el => el.style.color = val);
     }
-
     function saveNote(mIdx, dIdx, text) {
       let notes = JSON.parse(localStorage.getItem('calNotes') || '{}');
       if (!notes[mIdx]) notes[mIdx] = {};
       notes[mIdx][dIdx] = text;
       localStorage.setItem('calNotes', JSON.stringify(notes));
     }
-
     function uploadPhoto(event, idx) {
       const reader = new FileReader();
       reader.onload = () => {
@@ -140,21 +153,6 @@
       };
       reader.readAsDataURL(event.target.files[0]);
     }
-
-    async function exportAll() {
-      const panels = document.querySelectorAll('.design-panel');
-      panels.forEach(p => p.style.display = 'none');
-      for (let i = 0; i < 12; i++) {
-        const canvas = await html2canvas(document.getElementById(`page-${i}`));
-        const link = document.createElement('a');
-        link.download = `2026-Calendar-${months[i]}.png`;
-        link.href = canvas.toDataURL();
-        link.click();
-        await new Promise(r => setTimeout(r, 700));
-      }
-      panels.forEach(p => p.style.display = 'grid');
-    }
-
     createPlanner();
   </script>
 </body>
