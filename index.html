@@ -3,16 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>2026 Pro Font Planner</title>
+  <title>2026 Pro Planner - Fixed Grid</title>
   <link rel="manifest" href="manifest.json">
   <style>
-    /* UI STYLES */
     :root { --primary: #00ff88; --bg: #121212; --panel: #1e1e1e; }
     body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
     
     .main-controls { background: var(--panel); padding: 15px; border-radius: 12px; margin-bottom: 30px; position: sticky; top: 10px; z-index: 1000; display: flex; gap: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); align-items: center;}
     
-    /* PRINT STYLES (Letter Size) */
     .page { 
       background: white; color: black; 
       width: 8.5in; height: 11in; 
@@ -29,13 +27,37 @@
     
     .month-name { font-size: 42pt; font-weight: bold; text-align: center; margin-bottom: 10pt; text-transform: uppercase; letter-spacing: 2px; }
     
-    .days-grid { display: grid; grid-template-columns: repeat(7, 1fr); border-top: 3px solid currentColor; flex-grow: 1; }
-    .day-head { font-weight: bold; padding: 12pt 0; text-align: center; font-size: 10pt; border-bottom: 1px solid #eee; }
-    .day-square { position: relative; border-right: 1px solid #eee; border-bottom: 1px solid #eee; padding: 6pt; display: flex; flex-direction: column; height: 100%; }
-    .day-square:nth-child(7n) { border-right: none; }
+    /* Grid Fix: Solid border on top and left to start the box */
+    .days-grid { 
+      display: grid; 
+      grid-template-columns: repeat(7, 1fr); 
+      border-top: 3px solid currentColor; 
+      border-left: 1px solid #eee; 
+      flex-grow: 1; 
+    }
 
-    .day-num { font-size: 10pt; font-weight: bold; }
-    .day-notes { flex-grow: 1; border: none; background: transparent; resize: none; font-size: 9pt; font-family: inherit; width: 100%; outline: none; padding: 0; margin-top: 2pt; color: inherit; }
+    .day-head { 
+      font-weight: bold; 
+      padding: 12pt 0; 
+      text-align: center; 
+      font-size: 10pt; 
+      border-bottom: 1px solid #eee; 
+      border-right: 1px solid #eee;
+    }
+
+    .day-square { 
+      position: relative; 
+      border-right: 1px solid #eee; 
+      border-bottom: 1px solid #eee; 
+      padding: 6pt; 
+      display: flex; 
+      flex-direction: column; 
+      height: 100%; 
+      box-sizing: border-box;
+    }
+
+    .day-num { font-size: 10pt; font-weight: bold; margin-bottom: 2pt;}
+    .day-notes { flex-grow: 1; border: none; background: transparent; resize: none; font-size: 9pt; font-family: inherit; width: 100%; outline: none; padding: 0; color: inherit; }
     .holiday-label { font-size: 7.5pt; text-align: right; position: absolute; bottom: 4pt; right: 6pt; font-weight: bold; opacity: 0.8; }
 
     @media print {
@@ -46,7 +68,7 @@
     }
 
     button { padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; }
-    select { padding: 5px; border-radius: 4px; border: 1px solid #ccc; font-size: 11px; }
+    select { padding: 5px; border-radius: 4px; border: 1px solid #ccc; }
   </style>
 </head>
 <body>
@@ -54,7 +76,7 @@
   <div class="main-controls">
     <div style="text-align:center;">
       <div style="font-size:10px; margin-bottom:3px;">YEAR</div>
-      <input type="number" id="yearInput" value="2026" onchange="updateYear(this.value)" style="width:60px; padding: 5px; border-radius: 4px;">
+      <input type="number" id="yearInput" value="2026" onchange="updateYear(this.value)" style="width:65px; padding:5px;">
     </div>
     <button style="background:var(--primary); color:#121212;" onclick="window.print()">SAVE AS PDF / PRINT</button>
     <button style="background:#ff4444; color:white;" onclick="clearAll()">RESET ALL</button>
@@ -66,12 +88,7 @@
     const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
     const dayNames = ["SUN.", "MON.", "TUE.", "WED.", "THUR.", "FRI.", "SAT."];
     const holidayData = { "0-1": "New Year's", "0-19": "MLK Day", "1-14": "Valentine's", "2-16": "Presidents Day", "4-25": "Memorial Day", "6-4": "July 4th", "8-7": "Labor Day", "10-26": "Thanksgiving", "11-25": "Christmas" };
-
-    const topFonts = [
-      "Arial", "Verdana", "Tahoma", "Trebuchet MS", "Impact", "Times New Roman", "Georgia", "Garamond", "Courier New", "Brush Script MT",
-      "Helvetica", "Calibri", "Candara", "Optima", "Segoe UI", "American Typewriter", "Andale Mono", "Baskerville", "Big Caslon", "Bodoni 72",
-      "Copperplate", "Didot", "Futura", "Gill Sans", "Luminari", "Marker Felt", "Papyrus", "Rockwell", "Trattatello", "Zapfino"
-    ];
+    const topFonts = ["Arial", "Verdana", "Tahoma", "Trebuchet MS", "Impact", "Times New Roman", "Georgia", "Garamond", "Courier New", "Brush Script MT", "Helvetica", "Calibri", "Candara", "Optima", "Segoe UI", "American Typewriter", "Andale Mono", "Baskerville", "Big Caslon", "Bodoni 72", "Copperplate", "Didot", "Futura", "Gill Sans", "Luminari", "Marker Felt", "Papyrus", "Rockwell", "Trattatello", "Zapfino"];
 
     function renderCalendar(year) {
       const container = document.getElementById('calendar-container');
@@ -83,7 +100,6 @@
         const design = savedDesign[mIdx] || {};
         const page = document.createElement('div');
         page.className = 'page';
-        page.id = `page-${mIdx}`;
         page.style.color = design.mainColor || '#000000';
         page.style.fontFamily = design.font || 'Arial';
 
@@ -91,7 +107,10 @@
         const daysInMonth = new Date(year, mIdx + 1, 0).getDate();
         
         let gridHtml = dayNames.map(d => `<div class="day-head">${d}</div>`).join('');
+        
+        // Blank squares (ensure they have the same class to keep the grid aligned)
         for(let x=0; x<firstDay; x++) gridHtml += `<div class="day-square"></div>`;
+        
         for(let d=1; d<=daysInMonth; d++) {
           gridHtml += `
             <div class="day-square">
@@ -104,10 +123,10 @@
         page.innerHTML = `
           <div class="design-panel">
             <div>Font: <select onchange="updateDesign(${mIdx}, 'font', this.value)">
-              ${topFonts.map(f => `<option value="${f}" ${design.font === f ? 'selected' : ''} style="font-family:${f}">${f}</option>`).join('')}
+              ${topFonts.map(f => `<option value="${f}" ${design.font === f ? 'selected' : ''}>${f}</option>`).join('')}
             </select></div>
-            <div>Text Color: <input type="color" value="${design.mainColor || '#000000'}" onchange="updateDesign(${mIdx}, 'mainColor', this.value)"></div>
-            <div>Num Color: <input type="color" value="${design.numColor || '#999999'}" onchange="updateDesign(${mIdx}, 'numColor', this.value)"></div>
+            <div>Main: <input type="color" value="${design.mainColor || '#000000'}" onchange="updateDesign(${mIdx}, 'mainColor', this.value)"></div>
+            <div>Num: <input type="color" value="${design.numColor || '#999999'}" onchange="updateDesign(${mIdx}, 'numColor', this.value)"></div>
             <div>Photo: <input type="file" onchange="uploadPhoto(event, ${mIdx})"></div>
           </div>
           <div class="photo-area"><img id="img-${mIdx}" src="${design.img || 'https://via.placeholder.com/800x400?text='+name}"></div>
@@ -142,7 +161,7 @@
       reader.readAsDataURL(e.target.files[0]);
     }
 
-    function clearAll() { if(confirm("Delete all designs?")) { localStorage.clear(); location.reload(); } }
+    function clearAll() { if(confirm("Delete all?")) { localStorage.clear(); location.reload(); } }
     function updateYear(val) { localStorage.setItem('calYear', val); renderCalendar(val); }
 
     const currentYear = localStorage.getItem('calYear') || 2026;
