@@ -2,62 +2,104 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>2026 Pro Font Planner</title>
-  <link rel="manifest" href="manifest.json">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Mobile Planner Pro</title>
+  
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="https://via.placeholder.com/192?text=Calendar">
+  
   <style>
-    /* UI STYLES */
     :root { --primary: #00ff88; --bg: #121212; --panel: #1e1e1e; }
-    body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
     
-    .main-controls { background: var(--panel); padding: 15px; border-radius: 12px; margin-bottom: 30px; position: sticky; top: 10px; z-index: 1000; display: flex; gap: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); align-items: center;}
-    
-    /* PRINT STYLES (Letter Size) */
+    body { 
+      font-family: 'Segoe UI', sans-serif; 
+      background: var(--bg); 
+      color: white; 
+      margin: 0; 
+      padding: 10px; 
+      display: flex; 
+      flex-direction: column; 
+      align-items: center; 
+      overscroll-behavior: none; /* Prevents pull-to-refresh on mobile */
+    }
+
+    .main-controls { 
+      background: var(--panel); 
+      padding: 10px; 
+      border-radius: 50px; 
+      margin-bottom: 20px; 
+      position: sticky; 
+      top: 10px; 
+      z-index: 1000; 
+      display: flex; 
+      gap: 10px; 
+      box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+      width: 95%;
+      justify-content: space-around;
+    }
+
+    /* Scaling for Mobile Screens */
     .page { 
       background: white; color: black; 
-      width: 8.5in; height: 11in; 
-      padding: 0.5in; margin-bottom: 0.5in;
-      box-sizing: border-box; display: flex; flex-direction: column;
-      page-break-after: always; box-shadow: 0 0 20px rgba(0,0,0,0.5);
-      position: relative;
+      width: 100%; 
+      max-width: 8.5in; 
+      aspect-ratio: 8.5/11;
+      padding: 4%; 
+      margin-bottom: 20px;
+      box-sizing: border-box; 
+      display: flex; 
+      flex-direction: column;
+      border-radius: 8px;
     }
 
-    .design-panel { background: #f0f0f0; padding: 10px; border-radius: 8px; margin-bottom: 10px; display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; font-size: 11px; color: #333; align-items: center; }
+    /* Touch-Friendly Design Panel */
+    .design-panel { 
+      background: #f0f0f0; 
+      padding: 12px; 
+      border-radius: 8px; 
+      margin-bottom: 10px; 
+      display: flex; 
+      flex-wrap: wrap; 
+      gap: 8px; 
+      font-size: 12px; 
+      color: #333; 
+    }
     
-    .photo-area { width: 100%; height: 3.8in; background: #eee; overflow: hidden; margin-bottom: 0.2in; border-radius: 5px; }
+    .design-panel input, .design-panel select { 
+      padding: 8px; 
+      border-radius: 5px; 
+      font-size: 14px; /* Prevents iOS auto-zoom on focus */
+    }
+
+    .photo-area { width: 100%; height: 30%; background: #eee; overflow: hidden; margin-bottom: 10px; border-radius: 5px; }
     .photo-area img { width: 100%; height: 100%; object-fit: cover; }
     
-    .month-name { font-size: 42pt; font-weight: bold; text-align: center; margin-bottom: 10pt; text-transform: uppercase; letter-spacing: 2px; }
+    .month-name { font-size: 24pt; font-weight: bold; text-align: center; margin-bottom: 5pt; text-transform: uppercase; }
     
-    .days-grid { display: grid; grid-template-columns: repeat(7, 1fr); border-top: 3px solid currentColor; flex-grow: 1; }
-    .day-head { font-weight: bold; padding: 12pt 0; text-align: center; font-size: 10pt; border-bottom: 1px solid #eee; }
-    .day-square { position: relative; border-right: 1px solid #eee; border-bottom: 1px solid #eee; padding: 6pt; display: flex; flex-direction: column; height: 100%; }
-    .day-square:nth-child(7n) { border-right: none; }
+    .days-grid { display: grid; grid-template-columns: repeat(7, 1fr); border-top: 2px solid currentColor; flex-grow: 1; }
+    .day-head { font-weight: bold; padding: 5px 0; text-align: center; font-size: 8pt; border-bottom: 1px solid #eee; }
+    .day-square { position: relative; border-right: 1px solid #eee; border-bottom: 1px solid #eee; display: flex; flex-direction: column; height: 100%; }
+    
+    .day-num { font-size: 7pt; font-weight: bold; padding: 2px; }
+    .day-notes { flex-grow: 1; border: none; background: transparent; resize: none; font-size: 8pt; font-family: inherit; width: 100%; outline: none; padding: 2px; }
 
-    .day-num { font-size: 10pt; font-weight: bold; }
-    .day-notes { flex-grow: 1; border: none; background: transparent; resize: none; font-size: 9pt; font-family: inherit; width: 100%; outline: none; padding: 0; margin-top: 2pt; color: inherit; }
-    .holiday-label { font-size: 7.5pt; text-align: right; position: absolute; bottom: 4pt; right: 6pt; font-weight: bold; opacity: 0.8; }
-
+    /* Hide UI for Print/Save */
     @media print {
-      body { background: white; padding: 0; }
       .main-controls, .design-panel { display: none !important; }
-      .page { margin: 0; box-shadow: none; border: none; }
-      @page { size: letter; margin: 0; }
+      .page { width: 8.5in; height: 11in; margin: 0; box-shadow: none; }
+      body { padding: 0; }
     }
 
-    button { padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; }
-    select { padding: 5px; border-radius: 4px; border: 1px solid #ccc; font-size: 11px; }
+    button { padding: 12px 18px; border-radius: 25px; border: none; cursor: pointer; font-weight: bold; font-size: 14px; }
   </style>
 </head>
 <body>
 
   <div class="main-controls">
-    <div style="text-align:center;">
-      <div style="font-size:10px; margin-bottom:3px;">YEAR</div>
-      <input type="number" id="yearInput" value="2026" onchange="updateYear(this.value)" style="width:60px;">
-    </div>
-    <button style="background:var(--primary); color:#121212;" onclick="window.print()">SAVE AS PDF / PRINT</button>
-    <button style="background:#ff4444; color:white;" onclick="clearAll()">RESET ALL</button>
+    <input type="number" id="yearInput" value="2026" onchange="updateYear(this.value)" style="width:60px; border-radius:20px; border:none; padding:10px; text-align:center;">
+    <button style="background:var(--primary); color:#121212;" onclick="window.print()">SAVE PDF</button>
+    <button style="background:#444; color:white;" onclick="clearAll()">RESET</button>
   </div>
 
   <div id="calendar-container"></div>
@@ -65,13 +107,7 @@
   <script>
     const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
     const dayNames = ["SUN.", "MON.", "TUE.", "WED.", "THUR.", "FRI.", "SAT."];
-    const holidayData = { "0-1": "New Year's", "0-19": "MLK Day", "1-14": "Valentine's", "2-16": "Presidents Day", "4-25": "Memorial Day", "6-4": "July 4th", "8-7": "Labor Day", "10-26": "Thanksgiving", "11-25": "Christmas" };
-
-    const topFonts = [
-      "Arial", "Verdana", "Tahoma", "Trebuchet MS", "Impact", "Times New Roman", "Georgia", "Garamond", "Courier New", "Brush Script MT",
-      "Helvetica", "Calibri", "Candara", "Optima", "Segoe UI", "American Typewriter", "Andale Mono", "Baskerville", "Big Caslon", "Bodoni 72",
-      "Copperplate", "Didot", "Futura", "Gill Sans", "Luminari", "Marker Felt", "Papyrus", "Rockwell", "Trattatello", "Zapfino"
-    ];
+    const topFonts = ["Arial", "Georgia", "Courier New", "Impact", "Trebuchet MS", "Verdana", "Times New Roman"];
 
     function renderCalendar(year) {
       const container = document.getElementById('calendar-container');
@@ -83,9 +119,8 @@
         const design = savedDesign[mIdx] || {};
         const page = document.createElement('div');
         page.className = 'page';
-        page.id = `page-${mIdx}`;
-        page.style.color = design.mainColor || '#000000';
         page.style.fontFamily = design.font || 'Arial';
+        page.style.color = design.mainColor || '#000000';
 
         const firstDay = new Date(year, mIdx, 1).getDay();
         const daysInMonth = new Date(year, mIdx + 1, 0).getDate();
@@ -97,20 +132,18 @@
             <div class="day-square">
               <span class="day-num" style="color:${design.numColor || '#999'}">${d}</span>
               <textarea class="day-notes" oninput="saveNote(${mIdx}, ${d}, this.value)">${savedNotes[mIdx]?.[d] || ''}</textarea>
-              ${holidayData[`${mIdx}-${d}`] ? `<span class="holiday-label" style="color:${design.numColor || '#ff4444'}">${holidayData[`${mIdx}-${d}`]}</span>` : ''}
             </div>`;
         }
 
         page.innerHTML = `
           <div class="design-panel">
-            <div>Font: <select onchange="updateDesign(${mIdx}, 'font', this.value)">
-              ${topFonts.map(f => `<option value="${f}" ${design.font === f ? 'selected' : ''} style="font-family:${f}">${f}</option>`).join('')}
-            </select></div>
-            <div>Text Color: <input type="color" value="${design.mainColor || '#000000'}" onchange="updateDesign(${mIdx}, 'mainColor', this.value)"></div>
-            <div>Num Color: <input type="color" value="${design.numColor || '#999999'}" onchange="updateDesign(${mIdx}, 'numColor', this.value)"></div>
-            <div>Photo: <input type="file" onchange="uploadPhoto(event, ${mIdx})"></div>
+            <select onchange="updateDesign(${mIdx}, 'font', this.value)">
+              ${topFonts.map(f => `<option value="${f}" ${design.font === f ? 'selected' : ''}>${f}</option>`).join('')}
+            </select>
+            <input type="color" value="${design.mainColor || '#000000'}" onchange="updateDesign(${mIdx}, 'mainColor', this.value)">
+            <input type="file" accept="image/*" onchange="uploadPhoto(event, ${mIdx})" style="width:80px">
           </div>
-          <div class="photo-area"><img id="img-${mIdx}" src="${design.img || 'https://via.placeholder.com/800x400?text='+name}"></div>
+          <div class="photo-area"><img id="img-${mIdx}" src="${design.img || 'https://via.placeholder.com/400x200?text='+name}"></div>
           <div class="month-name">${name}</div>
           <div class="days-grid">${gridHtml}</div>
         `;
@@ -142,8 +175,7 @@
       reader.readAsDataURL(e.target.files[0]);
     }
 
-    function clearAll() { if(confirm("Delete all designs?")) { localStorage.clear(); location.reload(); } }
-
+    function clearAll() { if(confirm("Clear All?")) { localStorage.clear(); location.reload(); } }
     function updateYear(val) { localStorage.setItem('calYear', val); renderCalendar(val); }
 
     const currentYear = localStorage.getItem('calYear') || 2026;
