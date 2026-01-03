@@ -3,8 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>2026 Pro Planner - Fixed Grid</title>
-  <link rel="manifest" href="manifest.json">
+  <title>2026 Pro Planner - Smart Fit</title>
   <style>
     :root { --primary: #00ff88; --bg: #121212; --panel: #1e1e1e; }
     body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
@@ -22,40 +21,30 @@
 
     .design-panel { background: #f0f0f0; padding: 10px; border-radius: 8px; margin-bottom: 10px; display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; font-size: 11px; color: #333; align-items: center; }
     
-    .photo-area { width: 100%; height: 3.8in; background: #eee; overflow: hidden; margin-bottom: 0.2in; border-radius: 5px; }
-    .photo-area img { width: 100%; height: 100%; object-fit: cover; }
+    /* SMART FIT LOGIC HERE */
+    .photo-area { 
+      width: 100%; 
+      height: 4in; /* Fixed Height */
+      background: #eee; 
+      overflow: hidden; 
+      margin-bottom: 0.2in; 
+      border-radius: 5px; 
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .photo-area img { 
+      width: 100%; 
+      height: 100%; 
+      object-fit: cover; /* This crops the image to fill the box perfectly */
+      object-position: center; /* Keeps the middle of your photo in view */
+    }
     
     .month-name { font-size: 42pt; font-weight: bold; text-align: center; margin-bottom: 10pt; text-transform: uppercase; letter-spacing: 2px; }
     
-    /* Grid Fix: Solid border on top and left to start the box */
-    .days-grid { 
-      display: grid; 
-      grid-template-columns: repeat(7, 1fr); 
-      border-top: 3px solid currentColor; 
-      border-left: 1px solid #eee; 
-      flex-grow: 1; 
-    }
-
-    .day-head { 
-      font-weight: bold; 
-      padding: 12pt 0; 
-      text-align: center; 
-      font-size: 10pt; 
-      border-bottom: 1px solid #eee; 
-      border-right: 1px solid #eee;
-    }
-
-    .day-square { 
-      position: relative; 
-      border-right: 1px solid #eee; 
-      border-bottom: 1px solid #eee; 
-      padding: 6pt; 
-      display: flex; 
-      flex-direction: column; 
-      height: 100%; 
-      box-sizing: border-box;
-    }
-
+    .days-grid { display: grid; grid-template-columns: repeat(7, 1fr); border-top: 3px solid currentColor; border-left: 1px solid #eee; flex-grow: 1; }
+    .day-head { font-weight: bold; padding: 12pt 0; text-align: center; font-size: 10pt; border-bottom: 1px solid #eee; border-right: 1px solid #eee;}
+    .day-square { position: relative; border-right: 1px solid #eee; border-bottom: 1px solid #eee; padding: 6pt; display: flex; flex-direction: column; height: 100%; box-sizing: border-box;}
     .day-num { font-size: 10pt; font-weight: bold; margin-bottom: 2pt;}
     .day-notes { flex-grow: 1; border: none; background: transparent; resize: none; font-size: 9pt; font-family: inherit; width: 100%; outline: none; padding: 0; color: inherit; }
     .holiday-label { font-size: 7.5pt; text-align: right; position: absolute; bottom: 4pt; right: 6pt; font-weight: bold; opacity: 0.8; }
@@ -68,7 +57,7 @@
     }
 
     button { padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; }
-    select { padding: 5px; border-radius: 4px; border: 1px solid #ccc; }
+    select, .file-btn { padding: 5px; border-radius: 4px; border: 1px solid #ccc; font-size: 11px; background: white;}
   </style>
 </head>
 <body>
@@ -107,10 +96,7 @@
         const daysInMonth = new Date(year, mIdx + 1, 0).getDate();
         
         let gridHtml = dayNames.map(d => `<div class="day-head">${d}</div>`).join('');
-        
-        // Blank squares (ensure they have the same class to keep the grid aligned)
         for(let x=0; x<firstDay; x++) gridHtml += `<div class="day-square"></div>`;
-        
         for(let d=1; d<=daysInMonth; d++) {
           gridHtml += `
             <div class="day-square">
@@ -125,11 +111,11 @@
             <div>Font: <select onchange="updateDesign(${mIdx}, 'font', this.value)">
               ${topFonts.map(f => `<option value="${f}" ${design.font === f ? 'selected' : ''}>${f}</option>`).join('')}
             </select></div>
-            <div>Main: <input type="color" value="${design.mainColor || '#000000'}" onchange="updateDesign(${mIdx}, 'mainColor', this.value)"></div>
+            <div>Text: <input type="color" value="${design.mainColor || '#000000'}" onchange="updateDesign(${mIdx}, 'mainColor', this.value)"></div>
             <div>Num: <input type="color" value="${design.numColor || '#999999'}" onchange="updateDesign(${mIdx}, 'numColor', this.value)"></div>
-            <div>Photo: <input type="file" onchange="uploadPhoto(event, ${mIdx})"></div>
+            <div>Photo: <input type="file" class="file-btn" onchange="uploadPhoto(event, ${mIdx})"></div>
           </div>
-          <div class="photo-area"><img id="img-${mIdx}" src="${design.img || 'https://via.placeholder.com/800x400?text='+name}"></div>
+          <div class="photo-area"><img id="img-${mIdx}" src="${design.img || 'https://via.placeholder.com/1200x600?text=Upload+Photo+For+'+name}"></div>
           <div class="month-name">${name}</div>
           <div class="days-grid">${gridHtml}</div>
         `;
@@ -161,7 +147,7 @@
       reader.readAsDataURL(e.target.files[0]);
     }
 
-    function clearAll() { if(confirm("Delete all?")) { localStorage.clear(); location.reload(); } }
+    function clearAll() { if(confirm("Delete all designs?")) { localStorage.clear(); location.reload(); } }
     function updateYear(val) { localStorage.setItem('calYear', val); renderCalendar(val); }
 
     const currentYear = localStorage.getItem('calYear') || 2026;
